@@ -15,7 +15,7 @@ app.use(cors());
 app.use(bodyparser.json({limit: "100mb"}));
 
 // Establish MongoDB connection
-mongoose.connect('mongodb+srv://simpleman2:simpleman2@cluster0.rqx2w1f.mongodb.net/ProyectoUTCH?retryWrites=true&w=majority', {
+mongoose.connect('mongodb+srv://jonatanrico:SCRUMMaster!@blacksitest.qjf6dae.mongodb.net/?retryWrites=true&w=majority', {
     useNewUrlParser: true,
     useUnifiedTopology: true
 }).then(() => {
