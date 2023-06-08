@@ -11,8 +11,16 @@ env.config({
     path: "./config.env",
 });
 
-app.use(cors())
 
+ app.use(cors())
+
+ app.all("*", (res, req, next) =>{
+   //Rules of engagement
+   res.header("Access-Control-Allow-Origin", "*");
+   res.header("Access-Control-Allow-Methods", "GET, POST, DELETE, PUT");
+   res.header("Access-Control-Allow-Headers", "Content-Type");
+   next();
+ })
 app.use(bodyparser.json({limit: "100mb"}));
 
 // Establish MongoDB connection
@@ -27,7 +35,7 @@ mongoose.connect('mongodb+srv://jonatanrico:SCRUMMaster!@blacksitest.qjf6dae.mon
 
 app.post('/login', async (req, res) => {
     const { email, password } = req.body;
-  
+    console.log(email, password);
     try {
       const admin = await Admin.findOne({ email: email });
       if (!admin) {
@@ -40,44 +48,76 @@ app.post('/login', async (req, res) => {
       }
   
       res.send("Login successful!");
+      console.log("it works")
     } catch (error) {
       res.status(500).send("An error occurred while logging in");
     }
   });
+  app.post('/register', async function (req, res) {
+    const { email, password } = req.body;
   
-
-app.post('/register', async function (req, res) {
-    const {email, password} = req.body;
-
     try {
-        const existingAdmin = await Admin.findOne({email: email});
-        if (existingAdmin) {
-            return res.status(409).send("Email already registered");
-        }
+      const existingAdmin = await Admin.findOne({ email: email });
+      if (existingAdmin) {
+        return res.status(409).send("Email already registered");
+      }
+  
+      const hashedPassword = await bcrypt.hash(password, 10);
+      const newAdmin = new Admin({
+        email: email,
+        password: hashedPassword
+      });
+  
+      try {
+        await newAdmin.save();
+        res.send("Registration successful!");
+      } catch (error) {
+        console.error(error);
+        res.status(500).send("An error occurred while registering");
+      }
+    } catch (error) {
+      console.log(error);
+      res.status(500).send("An error occurred while registering");
+    }
+  });
+    
 
-        const hashedPassword = await bcrypt.hash(password, 10);
-        const newAdmin = new Admin({
-            email: email,
-            password: hashedPassword
-        });
+// app.post('/register', async function (req, res) {
+//     const {email, password} = req.body;
 
-        try {
-            await newAdmin.save();
-            res.send("Registration successful!");
-          } catch (error) {
-            console.error(error);
-            res.status(500).send("An error occurred while registering");
-          }
+//     try {
+//         const existingAdmin = await Admin.findOne({email: email});
+//         if (existingAdmin) {
+//             return res.status(409).send("Email already registered");
+//         }
+
+//         const hashedPassword = await bcrypt.hash(password, 10);
+//         const newAdmin = new Admin({
+//             email: email,
+//             password: hashedPassword
+//         });
+
+//         try {
+//             await newAdmin.save();
+//             res.send("Registration successful!");
+//           } catch (error) {
+//             console.error(error);
+//             res.status(500).send("An error occurred while registering");
+//           }
           
 
-        res.send("Registration successful!");
-    } catch (error) {
-        console.log(error)
-        res.status(500).send("An error occurred while registering");
-    }
-});
+//         res.send("Registration successful!");
+
+
+
+
+//     } catch (error) {
+//         console.log(error)
+//         res.status(500).send("An error occurred while registering");
+//     }
+// });
 app.get('/test', async function(req, res){
-  console.log("hola")
+  res.send("Hola")
 })
 
 const port = process.env.PORT || 3000;
