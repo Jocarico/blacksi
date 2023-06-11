@@ -11,9 +11,9 @@ env.config({
     path: "./config.env",
 });
 
-
  app.use(cors())
 
+ //CORS validation
  app.all("*", (res, req, next) =>{
    //Rules of engagement
    res.header("Access-Control-Allow-Origin", "*");
@@ -23,8 +23,10 @@ env.config({
  })
 app.use(bodyparser.json({limit: "100mb"}));
 
+//const database_connection = process.env.DATABASE_CONNECTION;
+
 // Establish MongoDB connection
-mongoose.connect('mongodb+srv://jonatanrico:SCRUMMaster!@blacksitest.qjf6dae.mongodb.net/?retryWrites=true&w=majority', {
+mongoose.connect("mongodb+srv://jonatanrico:SCRUMMaster!@blacksitest.qjf6dae.mongodb.net/?retryWrites=true&w=majority", {
     useNewUrlParser: true,
     useUnifiedTopology: true
 }).then(() => {
@@ -35,7 +37,6 @@ mongoose.connect('mongodb+srv://jonatanrico:SCRUMMaster!@blacksitest.qjf6dae.mon
 
 app.post('/login', async (req, res) => {
     const { email, password } = req.body;
-    console.log(email, password);
     try {
       const admin = await Admin.findOne({ email: email });
       if (!admin) {
@@ -44,11 +45,11 @@ app.post('/login', async (req, res) => {
   
       const passwordMatch = await bcrypt.compare(password, admin.password);
       if (!passwordMatch) {
+        //Wrong password
         return res.status(401).send("Invalid login credentials");
       }
-  
+      //Correct credentials
       res.send("Login successful!");
-      console.log("it works")
     } catch (error) {
       res.status(500).send("An error occurred while logging in");
     }
@@ -82,40 +83,6 @@ app.post('/login', async (req, res) => {
   });
     
 
-// app.post('/register', async function (req, res) {
-//     const {email, password} = req.body;
-
-//     try {
-//         const existingAdmin = await Admin.findOne({email: email});
-//         if (existingAdmin) {
-//             return res.status(409).send("Email already registered");
-//         }
-
-//         const hashedPassword = await bcrypt.hash(password, 10);
-//         const newAdmin = new Admin({
-//             email: email,
-//             password: hashedPassword
-//         });
-
-//         try {
-//             await newAdmin.save();
-//             res.send("Registration successful!");
-//           } catch (error) {
-//             console.error(error);
-//             res.status(500).send("An error occurred while registering");
-//           }
-          
-
-//         res.send("Registration successful!");
-
-
-
-
-//     } catch (error) {
-//         console.log(error)
-//         res.status(500).send("An error occurred while registering");
-//     }
-// });
 app.get('/test', async function(req, res){
   res.send("Hola")
 })
