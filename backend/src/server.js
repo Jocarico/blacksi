@@ -2,19 +2,27 @@ const express = require("express");
 const app = express();
 const bodyparser = require("body-parser");
 const cors = require("cors");
-const env = require("dotenv");
+// require("dotenv").config({path: "./config.env"});
+require('dotenv').config({path: __dirname + '/config.env'})
+
 const Admin = require('./models/adminModel');
 const bcrypt = require("bcrypt");
 const mongoose = require('mongoose');
+const jwt = require('jsonwebtoken');
 
-env.config({
-    path: "./config.env",
-});
 
- app.use(cors())
+// env.config({
+//     path: ,
+// });
+
+
+const database_connection = process.env.DATABASE_CONNECTION;
+const secretKey = process.env.ACCESS_TOKEN_SECRET;
+
+app.use(cors())
 
  //CORS validation
- app.all("*", (res, req, next) =>{
+app.all("*", (res, req, next) =>{
    //Rules of engagement
    res.header("Access-Control-Allow-Origin", "*");
    res.header("Access-Control-Allow-Methods", "GET, POST, DELETE, PUT");
@@ -23,10 +31,14 @@ env.config({
  })
 app.use(bodyparser.json({limit: "100mb"}));
 
-//const database_connection = process.env.DATABASE_CONNECTION;
+
+function generateToken(payload) {
+  const token = jwt.sign(payload, secretKey, { expiresIn: '1h' });
+  return token;
+}
 
 // Establish MongoDB connection
-mongoose.connect("mongodb+srv://jonatanrico:SCRUMMaster!@blacksitest.qjf6dae.mongodb.net/?retryWrites=true&w=majority", {
+mongoose.connect(database_connection, {
     useNewUrlParser: true,
     useUnifiedTopology: true
 }).then(() => {
@@ -44,12 +56,19 @@ app.post('/login', async (req, res) => {
       }
   
       const passwordMatch = await bcrypt.compare(password, admin.password);
-      if (!passwordMatch) {
+      if(!passwordMatch) {
         //Wrong password
         return res.status(401).send("Invalid login credentials");
       }
       //Correct credentials
-      res.send("Login successful!");
+      if(admin && passwordMatch){
+        const payload = { email: email};
+        const token = generateToken(payload);
+        console.log("it works")
+  
+        res.send(token);
+      }
+      
     } catch (error) {
       res.status(500).send("An error occurred while logging in");
     }
@@ -82,10 +101,6 @@ app.post('/login', async (req, res) => {
     }
   });
     
-
-app.get('/test', async function(req, res){
-  res.send("Hola")
-})
 
 const port = process.env.PORT || 3000;
 app.listen(port, () => {
