@@ -4,12 +4,11 @@ const bodyparser = require("body-parser");
 const cors = require("cors");
 // require("dotenv").config({path: "./config.env"});
 require('dotenv').config({path: __dirname + '/config.env'})
-
 const Admin = require('./models/adminModel');
 const bcrypt = require("bcrypt");
 const mongoose = require('mongoose');
 const jwt = require('jsonwebtoken');
-
+const { api } = require('./apitn')
 
 // env.config({
 //     path: ,
@@ -17,7 +16,7 @@ const jwt = require('jsonwebtoken');
 
 
 const database_connection = process.env.DATABASE_CONNECTION;
-const secretKey = process.env.ACCESS_TOKEN_SECRET;
+const secretKey = process.env.ACCESS_TOKEN_SECRET
 
 app.use(cors())
 
@@ -30,6 +29,14 @@ app.all("*", (res, req, next) =>{
    next();
  })
 app.use(bodyparser.json({limit: "100mb"}));
+
+//JSON data from Tienda Nube 
+const tiendanubeData = async (req,res) => {
+  const tnData = await api.get()
+  console.log(tnData.data)
+  let info = tnData.data;
+  res.status(200).send(info);
+}
 
 
 function generateToken(payload) {
@@ -65,8 +72,7 @@ app.post('/login', async (req, res) => {
         const payload = { email: email};
         const token = generateToken(payload);
         console.log("it works")
-  
-        res.send(token);
+        res.status(200).send({_token: token});
       }
       
     } catch (error) {
@@ -100,6 +106,13 @@ app.post('/login', async (req, res) => {
       res.status(500).send("An error occurred while registering");
     }
   });
+  
+  app.get('/deliveryInfo', async function (req, res) {
+    const datatn = await tiendanubeData(req,res);
+ 
+
+
+  })
     
 
 const port = process.env.PORT || 3000;
