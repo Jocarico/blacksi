@@ -48,6 +48,8 @@ const getDriver = async(req,res,next) =>{
   let driver;
   try {
     driver = await Admin.findById(req.params.id);
+    //Object ID below
+    // console.log(req.params.id)
     if (driver == null) {
       return res.status(404).json( {message: 'Cannot find Driver with that ID'})
     }
@@ -137,7 +139,7 @@ app.patch('/updateDriverInfo/:id', getDriver, async (req,res) => {
     res.driver.lastName = req.body.lastName;
   }
   if (req.body.firstName != null) {
-    res.driver.firstName = req.phoneNumber.firstName;
+    res.driver.firstName = req.body.firstName;
   }if (req.body.phoneNumber != null) {
     res.driver.phoneNumber = req.body.phoneNumber;
   }
@@ -160,7 +162,7 @@ app.patch('/updateDriverInfo/:id', getDriver, async (req,res) => {
 });
 app.delete('/deleteDriver/:id', getDriver, async (req,res) => {
   try {
-    await res.driver.remove();
+    await res.driver.deleteOne();
     res.json({message: 'Driver deleted'})
   } catch (err) {
     res.status(500).json({message: err.message})
