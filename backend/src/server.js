@@ -4,11 +4,14 @@ const bodyparser = require("body-parser");
 const cors = require("cors");
 // require("dotenv").config({path: "./config.env"});
 require('dotenv').config({path: __dirname + '/config.env'})
-const Admin = require('./models/adminModel');
+const {Admin, Tracking} = require('./models/adminModel');
 const bcrypt = require("bcrypt");
 const mongoose = require('mongoose');
 const jwt = require('jsonwebtoken');
 const { api } = require('./apitn')
+const accountSid = process.env.ACCOUNTSID;
+const authToken = process.env.TWILIO_AUTH_TOKEN;
+const client = require('twilio')(accountSid, authToken);
 
 // env.config({
 //     path: ,
@@ -60,6 +63,24 @@ const getDriver = async(req,res,next) =>{
   next();
 }
 
+const sendSMS = async () => {
+  try {
+    const message = await client.messages.create({
+      body: `Saludos Jesus Dominguez, tu pedido ya esta en camino,
+             el total es: $9650.00 MX, si deseas saber el tiempo estimado 
+             usa este número de rastreo: TN0102030410 e introducelo desde 
+             esta pagina: http://localhost:4200/confirmed-orders`,
+      from: process.env.TWILIO_PHONE_NUMBER,
+      to: '+526145346525'
+    });
+
+    console.log(message.sid);
+  } catch (error) {
+    console.error(error);
+  }
+};
+
+
 // Establish MongoDB connection
 mongoose.connect(database_connection, {
     useNewUrlParser: true,
@@ -69,19 +90,27 @@ mongoose.connect(database_connection, {
 }).catch((error) => {
     console.error('Error connecting to MongoDB:', error);
 });
-
+app.post('/send-sms', async (req, res) => {
+  try {
+    await sendSMS();
+    res.status(200).json({ message: 'SMS sent successfully' });
+  } catch (error) {
+    console.error('Error sending SMS:', error);
+    res.status(500).json({ error: 'Failed to send SMS' });
+  }
+});
 app.post('/login', async (req, res) => {
     const { email, password } = req.body;
     try {
       const admin = await Admin.findOne({ email: email });
       if (!admin) {
-        return res.status(401).send("Invalid login credentials");
+        return res.status(401).send("Invalid email credentials");
       }
   
       const passwordMatch = await bcrypt.compare(password, admin.password);
       if(!passwordMatch) {
         //Wrong password
-        return res.status(401).send("Invalid login credentials");
+        return res.status(401).send("Invalid password credentials");
       }
       //Correct credentials
       if(admin && passwordMatch){
@@ -179,7 +208,30 @@ app.get('/deliveryInfo', async function (req, res) {
 
 
 })
-    
+app.post('/estimatedTime', async (req,res) =>{
+  /*
+  Create a new document for the collection Tracking
+  Create a random number and stored it on 
+  */
+  const trackingNumber = "TN0102030410";
+  const ETA = 20;
+  const totalCost= 9650;
+  const name = "Jesus Dominguez";
+  const newTracking = new Tracking({
+    trackingNumber: trackingNumber,
+    name:name,
+    totalCost:totalCost,
+    ETA: ETA
+  })
+
+  try {
+    await newTracking.save();
+    res.status(201).send("Recored added succesfully");
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("An error occurred while adding record");
+  }
+})
 
 const port = process.env.PORT || 3000;
 app.listen(port, () => {
